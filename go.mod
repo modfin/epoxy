@@ -7,3 +7,5 @@ require (
 	github.com/caarlos0/env/v7 v7.0.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 )
+
+require github.com/google/uuid v1.3.0 // indirect

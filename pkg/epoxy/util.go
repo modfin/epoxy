@@ -30,3 +30,5 @@ func waitAll(functions ...func() error) error {
 	}
 	return nil
 }
+
+type Middleware func(next http.Handler) http.Handler

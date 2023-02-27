@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/modfin/epoxy/internal/fallbackfs"
 	"github.com/modfin/epoxy/internal/log"
-	"github.com/modfin/epoxy/internal/middleware"
 	"io/fs"
 	"net/http"
 	"net/http/httputil"
@@ -14,7 +13,7 @@ import (
 	"strings"
 )
 
-func Serve(ctx context.Context, middlewares []middleware.Middleware, publicDir fs.FS, publicPrefix string, routes ...Route) error {
+func Serve(ctx context.Context, middlewares []Middleware, publicDir fs.FS, publicPrefix string, routes ...Route) error {
 	mux := http.NewServeMux()
 
 	if publicDir != nil {

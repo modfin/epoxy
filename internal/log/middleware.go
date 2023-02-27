@@ -1,20 +1,32 @@
-package middleware
+package log
 
 import (
-	"github.com/modfin/epoxy/internal/log"
+	"context"
+	"github.com/google/uuid"
 	"net/http"
 	"time"
 )
 
-func Logging(next http.Handler) http.Handler {
+type contextKey struct{}
+
+func Middleware(next http.Handler) http.Handler {
 	fn := func(respWriter http.ResponseWriter, r *http.Request) {
 		w := wrapped(respWriter)
 		t := time.Now()
-		next.ServeHTTP(w, r)
-		log.New().
+		logFields := make(map[string]any)
+		ctx := context.WithValue(r.Context(), contextKey{}, logFields)
+		requestId := r.Header.Get("X-Request-Id")
+		if requestId == "" {
+			requestId = uuid.New().String()
+			r.Header.Set("X-Request-Id", requestId)
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
+		New().
 			WithField("path", r.URL.Path).
 			WithField("latency", time.Now().Sub(t).Round(time.Millisecond).String()).
 			WithField("status", w.status).
+			WithField("request_id", requestId).
+			WithFields(logFields).
 			Info("access")
 	}
 
