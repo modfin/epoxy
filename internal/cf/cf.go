@@ -15,9 +15,9 @@ import (
 
 type contextKey struct{}
 
-func Middleware(cfAppAud string, cfJwkUrl string) epoxy.Middleware {
-	if cfAppAud == "" || cfJwkUrl == "" {
-		log.New().Fatal("cf: CF_APP_AUD and CF_JWK_URL required")
+func Middleware(cfAppAud string, cfJwksUrl string) epoxy.Middleware {
+	if cfAppAud == "" || cfJwksUrl == "" {
+		log.New().Fatal("cf: CF_APP_AUD and CF_JWKS_URL required")
 	}
 	return func(next http.Handler) http.Handler {
 
@@ -25,7 +25,7 @@ func Middleware(cfAppAud string, cfJwkUrl string) epoxy.Middleware {
 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var claims Claims
-			token, err := jwk.ParseWithUrlIntoClaims(r.Context(), jwkCache, cfJwkUrl, r.Header.Get("Cf-Access-Jwt-Assertion"), &claims)
+			token, err := jwk.ParseWithUrlIntoClaims(r.Context(), jwkCache, cfJwksUrl, r.Header.Get("Cf-Access-Jwt-Assertion"), &claims)
 			if err != nil {
 				log.New().WithError(fmt.Errorf("cf: error parsing jwt token: %w", err)).AddToContext(r.Context())
 				w.WriteHeader(http.StatusUnauthorized)

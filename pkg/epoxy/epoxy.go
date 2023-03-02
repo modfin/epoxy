@@ -13,7 +13,11 @@ import (
 	"strings"
 )
 
-func Serve(ctx context.Context, middlewares []Middleware, publicDir fs.FS, publicPrefix string, routes ...Route) error {
+type Epoxy interface {
+	serve(ctx context.Context) error
+}
+
+func New(addr string, middlewares []Middleware, publicDir fs.FS, publicPrefix string, routes ...Route) (Epoxy, error) {
 	mux := http.NewServeMux()
 
 	if publicDir != nil {
@@ -33,7 +37,7 @@ func Serve(ctx context.Context, middlewares []Middleware, publicDir fs.FS, publi
 	for _, r := range routes {
 		target, err := url.Parse(r.Target)
 		if err != nil {
-			return fmt.Errorf("could parse target route target: %w", err)
+			return nil, fmt.Errorf("could parse target route target: %w", err)
 		}
 		p := httputil.NewSingleHostReverseProxy(target)
 		prefix := strings.TrimSuffix(r.Prefix, "/")
@@ -53,11 +57,34 @@ func Serve(ctx context.Context, middlewares []Middleware, publicDir fs.FS, publi
 	for _, m := range middlewares {
 		handler = m(handler)
 	}
-	server := &http.Server{Addr: ":8080", Handler: handler}
+	return &epoxy{
+		Handler: handler,
+		addr:    addr,
+	}, nil
+}
+
+type epoxy struct {
+	http.Handler
+	addr string
+}
+
+func (e epoxy) serve(ctx context.Context) error {
+	server := &http.Server{Addr: e.addr, Handler: e}
 	return waitAll(func() error {
 		<-ctx.Done()
 		return server.Shutdown(context.Background())
 	}, func() error {
 		return server.ListenAndServe()
 	})
+}
+
+func Serve(ctx context.Context, es ...Epoxy) error {
+	var functions []func() error
+	for _, e := range es {
+		e := e
+		functions = append(functions, func() error {
+			return e.serve(ctx)
+		})
+	}
+	return waitAll(functions...)
 }

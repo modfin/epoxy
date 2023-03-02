@@ -2,8 +2,8 @@ package extjwt
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/modfin/epoxy/internal/cf"
@@ -16,7 +16,9 @@ import (
 	"time"
 )
 
-func Middleware(extJwkUrl string, extJwtUrl string, extJwtKey *ecdsa.PrivateKey) epoxy.Middleware {
+type contextKey struct{}
+
+func Middleware(extJwkUrl string, extJwtUrl string) epoxy.Middleware {
 	if extJwkUrl == "" || extJwtUrl == "" {
 		log.New().Fatal("extjwt: missing required parameters")
 	}
@@ -38,17 +40,17 @@ func Middleware(extJwkUrl string, extJwtUrl string, extJwtKey *ecdsa.PrivateKey)
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			token := jwt.NewWithClaims(jwt.SigningMethodES256, extJwt.Claims) // TODO: perhaps add more fields to claims
-			epoxyJwt, err := token.SignedString(extJwtKey)
-			if err != nil {
-				log.New().WithError(err).AddToContext(r.Context())
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			r.Header.Set("Epoxy-Token", epoxyJwt)
-			next.ServeHTTP(w, r)
+			ctx := context.WithValue(r.Context(), contextKey{}, extJwt.Claims)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func ExtValidationClaims(ctx context.Context) (jwt.MapClaims, error) {
+	if c, ok := ctx.Value(contextKey{}).(jwt.MapClaims); ok {
+		return c, nil
+	}
+	return nil, errors.New("couldn't get external validation claims, make sure extjwt.Middleware has run")
 }
 
 func getAndParseExtJwt(ctx context.Context, jwkCache simplecache.Cache, jwtCache simplecache.Cache, extJwkUrl string, extJwtUrl string, cfAuthRaw string) (*jwt.Token, error) {
