@@ -1,8 +1,11 @@
 package log
 
 import (
+	"bufio"
 	"context"
+	"errors"
 	"github.com/google/uuid"
+	"net"
 	"net/http"
 	"time"
 )
@@ -57,4 +60,12 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.wroteHeader = true
 
 	return
+}
+
+func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := rw.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("wrapped response writer doesn't support hijack")
+	}
+	return h.Hijack()
 }
