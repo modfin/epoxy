@@ -20,19 +20,7 @@ type Epoxy interface {
 func New(addr string, middlewares []Middleware, publicDir fs.FS, publicPrefix string, routes ...Route) (Epoxy, error) {
 	mux := http.NewServeMux()
 
-	if publicDir != nil {
-		publicPrefix = path.Clean("/" + strings.TrimPrefix(publicPrefix, "/"))
-		f := fallbackfs.New(publicDir, "index.html")
-		h := http.StripPrefix(publicPrefix, http.FileServer(http.FS(f)))
-		attachToMux(mux, publicPrefix, h)
-		if publicPrefix != "/" {
-			mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-				http.Redirect(w, r, publicPrefix, http.StatusMovedPermanently)
-				return
-			})
-		}
-		log.New().WithField("prefix", publicPrefix).Info("hosting assets directory")
-	}
+	proxiedRoot := false
 
 	for _, r := range routes {
 		target, err := url.Parse(r.Target)
@@ -45,12 +33,29 @@ func New(addr string, middlewares []Middleware, publicDir fs.FS, publicPrefix st
 		if r.Strip {
 			h = http.StripPrefix(prefix, h)
 		}
+		if prefix == "" || prefix == "/" {
+			proxiedRoot = true
+		}
 		attachToMux(mux, prefix, h)
 		log.New().
 			WithField("prefix", r.Prefix).
 			WithField("target", r.Target).
 			WithField("strip", r.Strip).
 			Info("hosting reverse proxy")
+	}
+
+	if publicDir != nil {
+		publicPrefix = path.Clean("/" + strings.TrimPrefix(publicPrefix, "/"))
+		f := fallbackfs.New(publicDir, "index.html")
+		h := http.StripPrefix(publicPrefix, http.FileServer(http.FS(f)))
+		attachToMux(mux, publicPrefix, h)
+		if !proxiedRoot && publicPrefix != "/" {
+			mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+				http.Redirect(w, r, publicPrefix, http.StatusMovedPermanently)
+				return
+			})
+		}
+		log.New().WithField("prefix", publicPrefix).Info("hosting assets directory")
 	}
 
 	var handler http.Handler = mux

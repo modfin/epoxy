@@ -6,6 +6,10 @@ import (
 )
 
 func attachToMux(mux *http.ServeMux, dirPath string, handler http.Handler) {
+	if dirPath == "" || dirPath == "/" {
+		mux.Handle("/", handler)
+		return
+	}
 	mux.Handle(dirPath, handler)
 	mux.Handle(dirPath+"/", handler)
 }
