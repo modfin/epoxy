@@ -72,7 +72,7 @@ func Get() Config {
 			if err != nil {
 				log.New().WithError(err).Fatal("error to parsing ECDSA private key")
 			}
-			cfg.ExtJwtEcKey = key
+			cfg.EpoxyJwtEc256 = key
 		}
 	})
 	return cfg
@@ -91,7 +91,7 @@ type Config struct {
 	ExtJwkUrl           string
 	ExtJwtUrl           string
 	ExtJwtSubjectPath   string
-	ExtJwtEcKey         *ecdsa.PrivateKey
+	EpoxyJwtEc256       *ecdsa.PrivateKey
 }
 
 func parseRoutes(routesString string) ([]epoxy.Route, error) {

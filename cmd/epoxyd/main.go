@@ -25,10 +25,12 @@ func main() {
 
 	if cfg.CfAppAud != "" {
 		middlewares := []epoxy.Middleware{
-			epoxytoken.MiddlewareExt(cfg.ExtJwtEcKey, cfg.ExtJwtSubjectPath),
 			extjwt.Middleware(cfg.ExtJwkUrl, cfg.ExtJwtUrl),
 			cf.Middleware(cfg.CfAppAud, cfg.CfJwkUrl),
 			log.Middleware,
+		}
+		if cfg.EpoxyJwtEc256 != nil {
+			middlewares = append([]epoxy.Middleware{epoxytoken.MiddlewareExt(cfg.EpoxyJwtEc256, cfg.ExtJwtSubjectPath)}, middlewares...)
 		}
 		e, err := epoxy.New(cfg.CfAddr, middlewares, publicFs, cfg.PublicPrefix, cfg.Routes...)
 		if err != nil {
@@ -39,9 +41,11 @@ func main() {
 
 	if cfg.BasicAuthPass != "" {
 		middlewares := []epoxy.Middleware{
-			epoxytoken.MiddlewareBasic(cfg.ExtJwtEcKey, cfg.BasicAuthUserSuffix),
 			basicauth.Middleware(cfg.BasicAuthPass),
 			log.Middleware,
+		}
+		if cfg.EpoxyJwtEc256 != nil {
+			middlewares = append([]epoxy.Middleware{epoxytoken.MiddlewareBasic(cfg.EpoxyJwtEc256, cfg.BasicAuthUserSuffix)}, middlewares...)
 		}
 		e, err := epoxy.New(cfg.BasicAuthAddr, middlewares, publicFs, cfg.PublicPrefix, cfg.Routes...)
 		if err != nil {
