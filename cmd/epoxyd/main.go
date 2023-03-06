@@ -8,6 +8,7 @@ import (
 	"github.com/modfin/epoxy/internal/epoxytoken"
 	"github.com/modfin/epoxy/internal/extjwt"
 	"github.com/modfin/epoxy/internal/log"
+	"github.com/modfin/epoxy/internal/nocache"
 	"github.com/modfin/epoxy/pkg/epoxy"
 	"io/fs"
 	"os"
@@ -28,6 +29,7 @@ func main() {
 			extjwt.Middleware(cfg.ExtJwkUrl, cfg.ExtJwtUrl),
 			cf.Middleware(cfg.CfAppAud, cfg.CfJwkUrl),
 			log.Middleware,
+			nocache.Middleware,
 		}
 		if cfg.EpoxyJwtEc256 != nil {
 			middlewares = append([]epoxy.Middleware{epoxytoken.MiddlewareExt(cfg.EpoxyJwtEc256, cfg.ExtJwtSubjectPath)}, middlewares...)
@@ -43,6 +45,7 @@ func main() {
 		middlewares := []epoxy.Middleware{
 			basicauth.Middleware(cfg.BasicAuthPass),
 			log.Middleware,
+			nocache.Middleware,
 		}
 		if cfg.EpoxyJwtEc256 != nil {
 			middlewares = append([]epoxy.Middleware{epoxytoken.MiddlewareBasic(cfg.EpoxyJwtEc256, cfg.BasicAuthUserSuffix)}, middlewares...)
