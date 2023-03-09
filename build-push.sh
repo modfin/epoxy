@@ -4,10 +4,13 @@ VERSION=$(date +%Y-%m-%dT%H.%M.%S)-$(git log -1 --pretty=format:"%h")
 NAME=epoxy
 IMAGE_NAME=modfin/${NAME}
 
-docker build -f ./Dockerfile \
+BUILDER=$(docker buildx create) || exit 1
+
+docker buildx build --builder=${BUILDER} --push \
+    --platform linux/amd64,linux/arm64 \
+    -f ./Dockerfile \
     -t ${IMAGE_NAME}:latest \
     -t ${IMAGE_NAME}:${VERSION} \
-    . || exit 1
+    .
 
-docker push ${IMAGE_NAME}:latest || exit 1
-docker push ${IMAGE_NAME}:${VERSION} || exit 1
+docker buildx rm "${BUILDER}"
