@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/modfin/epoxy/internal/basicauth"
 	"github.com/modfin/epoxy/internal/cf"
 	"github.com/modfin/epoxy/internal/config"
+	"github.com/modfin/epoxy/internal/dev"
 	"github.com/modfin/epoxy/internal/epoxytoken"
 	"github.com/modfin/epoxy/internal/extjwt"
 	"github.com/modfin/epoxy/internal/log"
@@ -31,8 +31,8 @@ func main() {
 			log.Middleware,
 			nocache.Middleware,
 		}
-		if cfg.EpoxyJwtEc256 != nil {
-			middlewares = append([]epoxy.Middleware{epoxytoken.MiddlewareExt(cfg.EpoxyJwtEc256, cfg.ExtJwtSubjectPath)}, middlewares...)
+		if cfg.JwtEc256 != nil {
+			middlewares = append([]epoxy.Middleware{epoxytoken.MiddlewareExt(cfg.JwtEc256, cfg.ExtJwtSubjectPath)}, middlewares...)
 		}
 		e, err := epoxy.New(cfg.CfAddr, middlewares, publicFs, cfg.PublicPrefix, cfg.Routes...)
 		if err != nil {
@@ -41,18 +41,17 @@ func main() {
 		epoxies = append(epoxies, e)
 	}
 
-	if cfg.BasicAuthPass != "" {
+	if cfg.DevPass != "" {
 		middlewares := []epoxy.Middleware{
-			basicauth.Middleware(cfg.BasicAuthPass),
+			epoxytoken.MiddlewareDev(cfg.JwtEc256, cfg.DevAllowedUserSuffix),
+			dev.Middleware(cfg.DevPass, cfg.DevSessionDuration, cfg.JwtEc256, cfg.JwtEc256Pub),
 			log.Middleware,
 			nocache.Middleware,
 		}
-		if cfg.EpoxyJwtEc256 != nil {
-			middlewares = append([]epoxy.Middleware{epoxytoken.MiddlewareBasic(cfg.EpoxyJwtEc256, cfg.BasicAuthUserSuffix)}, middlewares...)
-		}
-		e, err := epoxy.New(cfg.BasicAuthAddr, middlewares, publicFs, cfg.PublicPrefix, cfg.Routes...)
+
+		e, err := epoxy.New(cfg.DevAddr, middlewares, publicFs, cfg.PublicPrefix, cfg.Routes...)
 		if err != nil {
-			log.New().WithError(err).Fatal("failed to init basic auth epoxy")
+			log.New().WithError(err).Fatal("failed to init dev epoxy")
 		}
 		epoxies = append(epoxies, e)
 	}

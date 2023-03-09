@@ -10,6 +10,7 @@ import (
 	"github.com/modfin/epoxy/pkg/epoxy"
 	"strings"
 	"sync"
+	"time"
 )
 
 var cfg Config
@@ -25,15 +26,17 @@ type config struct {
 	CfJwksUrl string `env:"CF_JWKS_URL"`
 	CfAppAud  string `env:"CF_APP_AUD"`
 
-	BasicAuthAddr       string `env:"BASIC_AUTH_ADDR" envDefault:":7070"`
-	BasicAuthUserSuffix string `env:"BASIC_AUTH_USER_SUFFIX"`
-	BasicAuthPass       string `env:"BASIC_AUTH_PASS"`
+	DevAddr              string        `env:"DEV_ADDR" envDefault:":7070"`
+	DevAllowedUserSuffix string        `env:"DEV_ALLOWED_USER_SUFFIX"`
+	DevPass              string        `env:"DEV_PASS"`
+	DevSessionDuration   time.Duration `env:"DEV_SESSION_DURATION"`
 
 	ExtJwksUrl        string `env:"EXT_JWKS_URL"`
 	ExtJwtUrl         string `env:"EXT_JWT_URL"`
 	ExtJwtSubjectPath string `env:"EXT_JWT_SUBJECT_PATH"`
 
-	EpoxyJwtEc256 string `env:"EPOXY_JWT_EC_256"`
+	JwtEc256    string `env:"JWT_EC_256"`
+	JwtEc256Pub string `env:"JWT_EC_256_PUB"`
 }
 
 func Get() Config {
@@ -52,46 +55,61 @@ func Get() Config {
 			}
 		}
 
-		cfg = Config{
-			Routes:              routes,
-			PublicDir:           strings.TrimSpace(c.PublicDir),
-			PublicPrefix:        strings.TrimSpace(c.PublicPrefix),
-			CfAddr:              strings.TrimSpace(c.CfAddr),
-			CfJwkUrl:            strings.TrimSpace(c.CfJwksUrl),
-			CfAppAud:            strings.TrimSpace(c.CfAppAud),
-			ExtJwkUrl:           strings.TrimSpace(c.ExtJwksUrl),
-			ExtJwtUrl:           strings.TrimSpace(c.ExtJwtUrl),
-			ExtJwtSubjectPath:   strings.TrimSpace(c.ExtJwtSubjectPath),
-			BasicAuthAddr:       strings.TrimSpace(c.BasicAuthAddr),
-			BasicAuthPass:       strings.TrimSpace(c.BasicAuthPass),
-			BasicAuthUserSuffix: strings.TrimSpace(c.BasicAuthUserSuffix),
+		if c.DevSessionDuration.Milliseconds() < 0 {
+			log.New().Fatal("error: DEV_SESSION_DURATION is negative")
 		}
 
-		if strings.TrimSpace(c.EpoxyJwtEc256) != "" {
-			key, err := jwt.ParseECPrivateKeyFromPEM([]byte(strings.TrimSpace(c.EpoxyJwtEc256)))
+		cfg = Config{
+			Routes:               routes,
+			PublicDir:            strings.TrimSpace(c.PublicDir),
+			PublicPrefix:         strings.TrimSpace(c.PublicPrefix),
+			CfAddr:               strings.TrimSpace(c.CfAddr),
+			CfJwkUrl:             strings.TrimSpace(c.CfJwksUrl),
+			CfAppAud:             strings.TrimSpace(c.CfAppAud),
+			ExtJwkUrl:            strings.TrimSpace(c.ExtJwksUrl),
+			ExtJwtUrl:            strings.TrimSpace(c.ExtJwtUrl),
+			ExtJwtSubjectPath:    strings.TrimSpace(c.ExtJwtSubjectPath),
+			DevAddr:              strings.TrimSpace(c.DevAddr),
+			DevPass:              strings.TrimSpace(c.DevPass),
+			DevAllowedUserSuffix: strings.TrimSpace(c.DevAllowedUserSuffix),
+			DevSessionDuration:   c.DevSessionDuration,
+		}
+
+		if strings.TrimSpace(c.JwtEc256) != "" {
+			key, err := jwt.ParseECPrivateKeyFromPEM([]byte(strings.TrimSpace(c.JwtEc256)))
 			if err != nil {
 				log.New().WithError(err).Fatal("error to parsing ECDSA private key")
 			}
-			cfg.EpoxyJwtEc256 = key
+			cfg.JwtEc256 = key
+		}
+
+		if strings.TrimSpace(c.JwtEc256Pub) != "" {
+			key, err := jwt.ParseECPublicKeyFromPEM([]byte(strings.TrimSpace(c.JwtEc256Pub)))
+			if err != nil {
+				log.New().WithError(err).Fatal("error to parsing ECDSA public key")
+			}
+			cfg.JwtEc256Pub = key
 		}
 	})
 	return cfg
 }
 
 type Config struct {
-	Routes              []epoxy.Route
-	PublicDir           string
-	PublicPrefix        string
-	CfAddr              string
-	CfJwkUrl            string
-	CfAppAud            string
-	BasicAuthAddr       string
-	BasicAuthUserSuffix string
-	BasicAuthPass       string
-	ExtJwkUrl           string
-	ExtJwtUrl           string
-	ExtJwtSubjectPath   string
-	EpoxyJwtEc256       *ecdsa.PrivateKey
+	Routes               []epoxy.Route
+	PublicDir            string
+	PublicPrefix         string
+	CfAddr               string
+	CfJwkUrl             string
+	CfAppAud             string
+	DevAddr              string
+	DevAllowedUserSuffix string
+	DevPass              string
+	DevSessionDuration   time.Duration
+	ExtJwkUrl            string
+	ExtJwtUrl            string
+	ExtJwtSubjectPath    string
+	JwtEc256             *ecdsa.PrivateKey
+	JwtEc256Pub          *ecdsa.PublicKey
 }
 
 func parseRoutes(routesString string) ([]epoxy.Route, error) {

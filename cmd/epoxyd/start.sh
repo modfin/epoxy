@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 export PUBLIC_DIR="$(PWD)/public"
-
 export PUBLIC_PREFIX=/
 
 export ROUTES=$(cat <<EOF
@@ -9,6 +8,9 @@ export ROUTES=$(cat <<EOF
 EOF
 )
 
-export BASIC_AUTH_PASS=test
+export DEV_PASS=test
+export DEV_SESSION_DURATION=1m
+export JWT_EC_256=$(openssl ecparam -name prime256v1 -genkey -noout)
+export JWT_EC_256_PUB=$(echo "$JWT_EC_256" | openssl ec -pubout)
 
 go run -race main.go

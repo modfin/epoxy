@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/modfin/epoxy/internal/basicauth"
+	"github.com/modfin/epoxy/internal/dev"
 	"github.com/modfin/epoxy/internal/extjwt"
 	"github.com/modfin/epoxy/internal/log"
 	"github.com/modfin/epoxy/pkg/epoxy"
@@ -59,27 +59,27 @@ func MiddlewareExt(epoxyJwtKey *ecdsa.PrivateKey, subjectPath string) epoxy.Midd
 	}
 }
 
-func MiddlewareBasic(epoxyJwtKey *ecdsa.PrivateKey, allowedSuffix string) epoxy.Middleware {
+func MiddlewareDev(epoxyJwtKey *ecdsa.PrivateKey, allowedSuffix string) epoxy.Middleware {
 	if epoxyJwtKey == nil {
 		log.New().Fatal("epoxytoken: jwt key required")
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			username, err := basicauth.Username(r.Context())
+			email, err := dev.Email(r.Context())
 			if err != nil {
 				log.New().WithError(fmt.Errorf("epoxytoken: %w", err)).AddToContext(r.Context())
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			if !strings.HasSuffix(username, allowedSuffix) || strings.TrimSpace(strings.TrimSuffix(username, allowedSuffix)) == "" {
-				log.New().WithError(errors.New("epoxytoken: basic auth username not allowed")).AddToContext(r.Context())
+			if !strings.HasSuffix(email, allowedSuffix) || strings.TrimSpace(strings.TrimSuffix(email, allowedSuffix)) == "" {
+				log.New().WithError(errors.New("epoxytoken: dev auth email not allowed")).AddToContext(r.Context())
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
 			claims := EpoxyClaims{
 				RegisteredClaims: jwt.RegisteredClaims{
 					Issuer:    "epoxy",
-					Subject:   username,
+					Subject:   email,
 					IssuedAt:  &jwt.NumericDate{Time: time.Now()},
 					ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Minute)},
 				},
