@@ -28,12 +28,15 @@ type config struct {
 
 	DevAddr              string        `env:"DEV_ADDR" envDefault:":7070"`
 	DevAllowedUserSuffix string        `env:"DEV_ALLOWED_USER_SUFFIX"`
-	DevPass              string        `env:"DEV_PASS"`
+	DevBcryptHash        string        `env:"DEV_BCRYPT_HASH"`
 	DevSessionDuration   time.Duration `env:"DEV_SESSION_DURATION"`
 
 	ExtJwksUrl        string `env:"EXT_JWKS_URL"`
 	ExtJwtUrl         string `env:"EXT_JWT_URL"`
 	ExtJwtSubjectPath string `env:"EXT_JWT_SUBJECT_PATH"`
+
+	NoAuthEnable bool   `env:"NO_AUTH_ENABLE"`
+	NoAuthAddr   string `env:"NO_AUTH_ADDR"`
 
 	JwtEc256    string `env:"JWT_EC_256"`
 	JwtEc256Pub string `env:"JWT_EC_256_PUB"`
@@ -70,8 +73,10 @@ func Get() Config {
 			ExtJwtUrl:            strings.TrimSpace(c.ExtJwtUrl),
 			ExtJwtSubjectPath:    strings.TrimSpace(c.ExtJwtSubjectPath),
 			DevAddr:              strings.TrimSpace(c.DevAddr),
-			DevPass:              strings.TrimSpace(c.DevPass),
+			DevBcryptHash:        strings.TrimSpace(c.DevBcryptHash),
 			DevAllowedUserSuffix: strings.TrimSpace(c.DevAllowedUserSuffix),
+			NoAuthEnable:         c.NoAuthEnable,
+			NoAuthAddr:           strings.TrimSpace(c.NoAuthAddr),
 			DevSessionDuration:   c.DevSessionDuration,
 		}
 
@@ -103,11 +108,13 @@ type Config struct {
 	CfAppAud             string
 	DevAddr              string
 	DevAllowedUserSuffix string
-	DevPass              string
+	DevBcryptHash        string
 	DevSessionDuration   time.Duration
 	ExtJwkUrl            string
 	ExtJwtUrl            string
 	ExtJwtSubjectPath    string
+	NoAuthEnable         bool
+	NoAuthAddr           string
 	JwtEc256             *ecdsa.PrivateKey
 	JwtEc256Pub          *ecdsa.PublicKey
 }

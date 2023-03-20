@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/klauspost/compress/gzhttp"
 	"github.com/modfin/epoxy/internal/cf"
 	"github.com/modfin/epoxy/internal/config"
 	"github.com/modfin/epoxy/internal/dev"
@@ -11,6 +12,7 @@ import (
 	"github.com/modfin/epoxy/internal/nocache"
 	"github.com/modfin/epoxy/pkg/epoxy"
 	"io/fs"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,42 +24,50 @@ func main() {
 	if cfg.PublicDir != "" {
 		publicFs = os.DirFS(cfg.PublicDir)
 	}
+	e, err := epoxy.New(publicFs, cfg.PublicPrefix, cfg.Routes...)
+	if err != nil {
+		log.New().WithError(err).Fatal("failed to init epoxy")
+	}
+
 	var epoxies []epoxy.Epoxy
 
 	if cfg.CfAppAud != "" {
+		var gzipMiddleware = func(h http.Handler) http.Handler {
+			return gzhttp.GzipHandler(h)
+		}
 		middlewares := []epoxy.Middleware{
 			extjwt.Middleware(cfg.ExtJwkUrl, cfg.ExtJwtUrl),
 			cf.Middleware(cfg.CfAppAud, cfg.CfJwkUrl),
-			log.Middleware,
 			nocache.Middleware,
+			gzipMiddleware,
+			log.Middleware,
 		}
 		if cfg.JwtEc256 != nil {
 			middlewares = append([]epoxy.Middleware{epoxytoken.MiddlewareExt(cfg.JwtEc256, cfg.ExtJwtSubjectPath)}, middlewares...)
 		}
-		e, err := epoxy.New(cfg.CfAddr, middlewares, publicFs, cfg.PublicPrefix, cfg.Routes...)
-		if err != nil {
-			log.New().WithError(err).Fatal("failed to init cf epoxy")
-		}
-		epoxies = append(epoxies, e)
+		epoxies = append(epoxies, e.WithMiddlewares(middlewares).Finalize("cf", cfg.CfAddr))
 	}
 
-	if cfg.DevPass != "" {
+	if cfg.DevBcryptHash != "" {
 		middlewares := []epoxy.Middleware{
 			epoxytoken.MiddlewareDev(cfg.JwtEc256, cfg.DevAllowedUserSuffix),
-			dev.Middleware(cfg.DevPass, cfg.DevSessionDuration, cfg.JwtEc256, cfg.JwtEc256Pub),
-			log.Middleware,
+			dev.Middleware(cfg.DevBcryptHash, cfg.DevSessionDuration, cfg.JwtEc256, cfg.JwtEc256Pub),
 			nocache.Middleware,
+			log.Middleware,
 		}
+		epoxies = append(epoxies, e.WithMiddlewares(middlewares).Finalize("dev", cfg.DevAddr))
+	}
 
-		e, err := epoxy.New(cfg.DevAddr, middlewares, publicFs, cfg.PublicPrefix, cfg.Routes...)
-		if err != nil {
-			log.New().WithError(err).Fatal("failed to init dev epoxy")
+	if cfg.NoAuthEnable && cfg.NoAuthAddr != "" {
+		middlewares := []epoxy.Middleware{
+			nocache.Middleware,
+			log.Middleware,
 		}
-		epoxies = append(epoxies, e)
+		epoxies = append(epoxies, e.WithMiddlewares(middlewares).Finalize("no-auth", cfg.NoAuthAddr))
 	}
 
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGTERM)
-	err := epoxy.Serve(ctx, epoxies...)
+	err = epoxy.Serve(ctx, epoxies...)
 	log.New().WithError(err).Info("shutting down")
 	log.Drain(context.Background())
 }

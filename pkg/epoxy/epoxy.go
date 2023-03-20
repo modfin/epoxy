@@ -2,6 +2,7 @@ package epoxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/modfin/epoxy/internal/fallbackfs"
 	"github.com/modfin/epoxy/internal/log"
@@ -15,9 +16,11 @@ import (
 
 type Epoxy interface {
 	serve(ctx context.Context) error
+	WithMiddlewares(middlewares []Middleware) Epoxy
+	Finalize(name string, addr string) Epoxy
 }
 
-func New(addr string, middlewares []Middleware, publicDir fs.FS, publicPrefix string, routes ...Route) (Epoxy, error) {
+func New(publicDir fs.FS, publicPrefix string, routes ...Route) (Epoxy, error) {
 	mux := http.NewServeMux()
 
 	proxiedRoot := false
@@ -57,23 +60,42 @@ func New(addr string, middlewares []Middleware, publicDir fs.FS, publicPrefix st
 		}
 		log.New().WithField("prefix", publicPrefix).Info("hosting assets directory")
 	}
-
-	var handler http.Handler = mux
-	for _, m := range middlewares {
-		handler = m(handler)
-	}
 	return &epoxy{
-		Handler: handler,
-		addr:    addr,
+		Handler: mux,
 	}, nil
 }
 
 type epoxy struct {
 	http.Handler
+	name string
 	addr string
 }
 
+func (e epoxy) WithMiddlewares(middlewares []Middleware) Epoxy {
+	var handler = e.Handler
+	for _, m := range middlewares {
+		handler = m(handler)
+	}
+	return &epoxy{
+		Handler: handler,
+		addr:    e.addr,
+		name:    e.name,
+	}
+}
+
+func (e epoxy) Finalize(name string, addr string) Epoxy {
+	return &epoxy{
+		Handler: e.Handler,
+		addr:    addr,
+		name:    name,
+	}
+}
+
 func (e epoxy) serve(ctx context.Context) error {
+	if e.addr == "" {
+		return errors.New("must call Finalize on epoxy before serving")
+	}
+	log.New().WithField("addr", e.addr).Info(fmt.Sprintf("[%s] listening", e.name))
 	server := &http.Server{Addr: e.addr, Handler: e}
 	return waitAll(func() error {
 		<-ctx.Done()

@@ -28,6 +28,7 @@ func Middleware(next http.Handler) http.Handler {
 			WithField("path", r.URL.Path).
 			WithField("latency", time.Now().Sub(t).Round(time.Millisecond).String()).
 			WithField("status", w.status).
+			WithField("encoding", w.Header().Get("Content-Encoding")).
 			WithField("request_id", requestId).
 			WithFields(logFields).
 			Info("access")

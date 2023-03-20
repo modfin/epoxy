@@ -68,6 +68,9 @@ func (e *event) AddToContext(ctx context.Context) {
 }
 
 func (e *event) WithField(field string, value any) LogEvent {
+	if value == nil || value == "" {
+		return e
+	}
 	if e.fields == nil {
 		e.fields = make(map[string]any)
 	}

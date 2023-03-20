@@ -3,12 +3,12 @@ package dev
 import (
 	"context"
 	"crypto/ecdsa"
-	"crypto/subtle"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/modfin/epoxy/internal/log"
 	"github.com/modfin/epoxy/pkg/epoxy"
+	"golang.org/x/crypto/bcrypt"
 	"io"
 	"net/http"
 	"strings"
@@ -19,9 +19,9 @@ type contextKey struct{}
 
 const cookieName = "epoxy-dev"
 
-func Middleware(devPass string, sessionDuration time.Duration, jwtEc256 *ecdsa.PrivateKey, jwtEc256Pub *ecdsa.PublicKey) epoxy.Middleware {
-	if devPass == "" {
-		log.New().Fatal("dev: password required")
+func Middleware(bcryptHash string, sessionDuration time.Duration, jwtEc256 *ecdsa.PrivateKey, jwtEc256Pub *ecdsa.PublicKey) epoxy.Middleware {
+	if bcryptHash == "" {
+		log.New().Fatal("dev: bcrypt hash required")
 	}
 	if sessionDuration.Milliseconds() <= 0 {
 		log.New().Fatal("dev: session duration negative or zero")
@@ -48,7 +48,7 @@ func Middleware(devPass string, sessionDuration time.Duration, jwtEc256 *ecdsa.P
 			if r.Method == http.MethodPost {
 				email := r.FormValue("email")
 				password := r.FormValue("password")
-				if subtle.ConstantTimeCompare([]byte(devPass), []byte(password)) == 1 {
+				if bcrypt.CompareHashAndPassword([]byte(bcryptHash), []byte(password)) == nil {
 					exp := time.Now().Add(sessionDuration)
 					devClaims := claims{
 						DevEmail: email,
