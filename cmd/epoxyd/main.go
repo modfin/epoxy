@@ -51,7 +51,7 @@ func main() {
 	if cfg.DevBcryptHash != "" {
 		middlewares := []epoxy.Middleware{
 			epoxytoken.MiddlewareDev(cfg.JwtEc256, cfg.DevAllowedUserSuffix),
-			dev.Middleware(cfg.DevBcryptHash, cfg.DevSessionDuration, cfg.JwtEc256, cfg.JwtEc256Pub),
+			dev.Middleware(cfg.DevBcryptHash, cfg.DevSessionDuration, cfg.JwtEc256, cfg.JwtEc256Pub, cfg.DevDisableSecureCookie),
 			nocache.Middleware,
 			log.Middleware,
 		}

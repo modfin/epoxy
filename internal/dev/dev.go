@@ -19,7 +19,7 @@ type contextKey struct{}
 
 const cookieName = "epoxy-dev"
 
-func Middleware(bcryptHash string, sessionDuration time.Duration, jwtEc256 *ecdsa.PrivateKey, jwtEc256Pub *ecdsa.PublicKey) epoxy.Middleware {
+func Middleware(bcryptHash string, sessionDuration time.Duration, jwtEc256 *ecdsa.PrivateKey, jwtEc256Pub *ecdsa.PublicKey, devDisableSecure bool) epoxy.Middleware {
 	if bcryptHash == "" {
 		log.New().Fatal("dev: bcrypt hash required")
 	}
@@ -70,7 +70,7 @@ func Middleware(bcryptHash string, sessionDuration time.Duration, jwtEc256 *ecds
 						Value:    devJwt,
 						Path:     "/",
 						Expires:  exp,
-						Secure:   r.URL.Host != "localhost",
+						Secure:   !(r.URL.Host == "localhost" || devDisableSecure),
 						HttpOnly: true,
 						SameSite: http.SameSiteStrictMode,
 					}
