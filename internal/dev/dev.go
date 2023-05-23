@@ -72,7 +72,7 @@ func Middleware(bcryptHash string, sessionDuration time.Duration, jwtEc256 *ecds
 						Expires:  exp,
 						Secure:   !(r.URL.Host == "localhost" || devDisableSecure),
 						HttpOnly: true,
-						SameSite: http.SameSiteStrictMode,
+						SameSite: http.SameSiteLaxMode,
 					}
 					http.SetCookie(w, c)
 					log.New().WithField("dev_email", email).WithField("dev", "success, set cookie").AddToContext(r.Context())
