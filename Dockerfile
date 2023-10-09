@@ -1,4 +1,4 @@
-FROM golang:1.20.1-alpine3.17 as epoxy-builder
+FROM golang:1.21.2-alpine3.18 as epoxy-builder
 WORKDIR /work
 COPY . .
 
