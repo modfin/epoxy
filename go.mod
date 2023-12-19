@@ -8,5 +8,5 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.0
 	github.com/klauspost/compress v1.16.3
-	golang.org/x/crypto v0.7.0
+	golang.org/x/crypto v0.17.0
 )
