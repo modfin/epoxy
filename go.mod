@@ -1,12 +1,17 @@
 module github.com/modfin/epoxy
 
-go 1.20
+go 1.22
 
 require (
-	github.com/MicahParks/keyfunc v1.9.0
-	github.com/caarlos0/env/v7 v7.0.0
-	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/google/uuid v1.3.0
-	github.com/klauspost/compress v1.16.3
-	golang.org/x/crypto v0.17.0
+	github.com/MicahParks/keyfunc/v3 v3.3.3
+	github.com/caarlos0/env/v11 v11.0.1
+	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/google/uuid v1.6.0
+	github.com/klauspost/compress v1.17.8
+	golang.org/x/crypto v0.24.0
+)
+
+require (
+	github.com/MicahParks/jwkset v0.5.18 // indirect
+	golang.org/x/time v0.5.0 // indirect
 )

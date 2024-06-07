@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/modfin/epoxy/internal/dev"
 	"github.com/modfin/epoxy/internal/extjwt"
 	"github.com/modfin/epoxy/internal/log"

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/MicahParks/keyfunc"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/MicahParks/keyfunc/v3"
+	"github.com/golang-jwt/jwt/v5"
 	"io"
 	"net/http"
 	"time"
@@ -33,7 +33,7 @@ func ParseWithUrlIntoClaims(ctx context.Context, cache Cache, jwkUrl string, jwt
 		}
 		jwkJson = string(jwkJsonBytes)
 	}
-	jwks, err := keyfunc.NewJSON([]byte(jwkJson))
+	jwks, err := keyfunc.NewJWKSetJSON([]byte(jwkJson))
 	if err != nil {
 		return nil, err
 	}
