@@ -8,4 +8,4 @@ FROM alpine:3.20.3
 RUN apk add --no-cache ca-certificates
 COPY --from=epoxy-builder /epoxyd /epoxyd
 USER nobody
-CMD /epoxyd
+CMD [ "/epoxyd" ]
