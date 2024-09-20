@@ -110,7 +110,7 @@ const page = `
    <title>Epoxy Dev Login</title>
 </head>
 <body>
-	<form method="post" action="/">
+	<form method="post">
 		<div>
 			<label for="email">Email</label>
 			<input type="email" id="email" name="email">
