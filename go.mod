@@ -14,6 +14,6 @@ require (
 )
 
 require (
-	github.com/MicahParks/jwkset v0.5.18 // indirect
-	golang.org/x/time v0.5.0 // indirect
+	github.com/MicahParks/jwkset v0.7.0 // indirect
+	golang.org/x/time v0.9.0 // indirect
 )
