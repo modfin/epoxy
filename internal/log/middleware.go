@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type contextKey struct{}
@@ -26,7 +27,7 @@ func Middleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 		New().
 			WithField("path", r.URL.Path).
-			WithField("latency", time.Now().Sub(t).Round(time.Millisecond).String()).
+			WithField("latency_human", time.Since(t).String()).
 			WithField("status", w.status).
 			WithField("encoding", w.Header().Get("Content-Encoding")).
 			WithField("request_id", requestId).
