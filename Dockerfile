@@ -1,11 +1,25 @@
-FROM golang:1.24.3-alpine3.21 AS epoxy-builder
-WORKDIR /work
-COPY . .
+ARG ALPINE_VERSION=3.22.1
+ARG GO_VERSION=1.24.5-alpine3.22
+ARG GO_BUILD_ARGS='-trimpath -tags=timetzdata'
+ARG GO_LDFLAGS="-s -w"
 
-RUN go build -o /epoxyd cmd/epoxyd/main.go
+FROM golang:${GO_VERSION} AS epoxy-builder
+ARG GO_BUILD_ARGS
+ARG GO_LDFLAGS
+WORKDIR /src
+RUN --mount=type=bind,target=. go build -v -ldflags="${GO_LDFLAGS}" ${GO_BUILD_ARGS} -o /epoxyd ./cmd/epoxyd
 
-FROM alpine:3.21
-RUN apk add --no-cache ca-certificates
+FROM alpine:${ALPINE_VERSION} AS epoxy
+ENV TZ=UTC
+RUN apk add --no-cache ca-certificates tzdata
 COPY --from=epoxy-builder /epoxyd /epoxyd
 USER nobody
+CMD [ "/epoxyd" ]
+
+FROM scratch AS epoxy-slim
+ENV TZ=UTC
+COPY --from=epoxy /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=epoxy /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=epoxy-builder /epoxyd /epoxyd
+USER nobody:nobody
 CMD [ "/epoxyd" ]
