@@ -2,20 +2,22 @@ package main
 
 import (
 	"context"
+	"io/fs"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/klauspost/compress/gzhttp"
 	"github.com/modfin/epoxy/internal/cf"
 	"github.com/modfin/epoxy/internal/config"
+	"github.com/modfin/epoxy/internal/csp"
 	"github.com/modfin/epoxy/internal/dev"
 	"github.com/modfin/epoxy/internal/epoxytoken"
 	"github.com/modfin/epoxy/internal/extjwt"
 	"github.com/modfin/epoxy/internal/log"
 	"github.com/modfin/epoxy/internal/nocache"
 	"github.com/modfin/epoxy/pkg/epoxy"
-	"io/fs"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
@@ -45,6 +47,9 @@ func main() {
 		if cfg.JwtEc256 != nil {
 			middlewares = append([]epoxy.Middleware{epoxytoken.MiddlewareExt(cfg.JwtEc256, cfg.ExtJwtSubjectPath)}, middlewares...)
 		}
+		if cfg.ContentSecurityPolicy != "" {
+			middlewares = append([]epoxy.Middleware{csp.Middleware(cfg.ContentSecurityPolicy)}, middlewares...)
+		}
 		epoxies = append(epoxies, e.WithMiddlewares(middlewares).Finalize("cf", cfg.CfAddr))
 	}
 
@@ -55,6 +60,9 @@ func main() {
 			nocache.Middleware,
 			log.Middleware,
 		}
+		if cfg.ContentSecurityPolicy != "" {
+			middlewares = append([]epoxy.Middleware{csp.Middleware(cfg.ContentSecurityPolicy)}, middlewares...)
+		}
 		epoxies = append(epoxies, e.WithMiddlewares(middlewares).Finalize("dev", cfg.DevAddr))
 	}
 
@@ -62,6 +70,9 @@ func main() {
 		middlewares := []epoxy.Middleware{
 			nocache.Middleware,
 			log.Middleware,
+		}
+		if cfg.ContentSecurityPolicy != "" {
+			middlewares = append([]epoxy.Middleware{csp.Middleware(cfg.ContentSecurityPolicy)}, middlewares...)
 		}
 		epoxies = append(epoxies, e.WithMiddlewares(middlewares).Finalize("no-auth", cfg.NoAuthAddr))
 	}

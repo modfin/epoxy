@@ -4,13 +4,14 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/caarlos0/env/v11"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/modfin/epoxy/internal/log"
 	"github.com/modfin/epoxy/pkg/epoxy"
-	"strings"
-	"sync"
-	"time"
 )
 
 var cfg Config
@@ -41,6 +42,8 @@ type config struct {
 
 	JwtEc256    string `env:"JWT_EC_256"`
 	JwtEc256Pub string `env:"JWT_EC_256_PUB"`
+
+	ContentSecurityPolicy string `env:"CONTENT_SECURITY_POLICY"`
 }
 
 func Get() Config {
@@ -80,6 +83,7 @@ func Get() Config {
 			NoAuthAddr:             strings.TrimSpace(c.NoAuthAddr),
 			DevSessionDuration:     c.DevSessionDuration,
 			DevDisableSecureCookie: c.DevDisableSecureCookie,
+			ContentSecurityPolicy:  c.ContentSecurityPolicy,
 		}
 
 		if strings.TrimSpace(c.JwtEc256) != "" {
@@ -120,6 +124,7 @@ type Config struct {
 	NoAuthAddr             string
 	JwtEc256               *ecdsa.PrivateKey
 	JwtEc256Pub            *ecdsa.PublicKey
+	ContentSecurityPolicy  string
 }
 
 func parseRoutes(routesString string) ([]epoxy.Route, error) {
