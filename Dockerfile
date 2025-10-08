@@ -1,5 +1,5 @@
 ARG ALPINE_VERSION=3.22.1
-ARG GO_VERSION=1.24.5-alpine3.22
+ARG GO_VERSION=1.25.2-alpine3.22
 ARG GO_BUILD_ARGS='-trimpath -tags=timetzdata'
 ARG GO_LDFLAGS="-s -w"
 
