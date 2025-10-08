@@ -11,6 +11,7 @@ RUN --mount=type=bind,target=. go build -v -ldflags="${GO_LDFLAGS}" ${GO_BUILD_A
 
 FROM alpine:${ALPINE_VERSION} AS epoxy
 ENV TZ=UTC
+RUN apk update && apk upgrade
 RUN apk add --no-cache ca-certificates tzdata
 COPY --from=epoxy-builder /epoxyd /epoxyd
 USER nobody

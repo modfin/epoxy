@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euxo pipefail
+
 VERSION=$(date +%Y-%m-%dT%H.%M.%S)-$(git log -1 --pretty=format:"%h")
 NAME=epoxy
 IMAGE_NAME=modfin/${NAME}
@@ -7,6 +9,7 @@ IMAGE_NAME=modfin/${NAME}
 BUILDER=$(docker buildx create) || exit 1
 
 docker buildx build --builder=${BUILDER} \
+    --no-cache \
     --push \
     --target epoxy \
     --platform linux/amd64,linux/arm64 \
