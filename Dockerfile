@@ -22,5 +22,5 @@ ENV TZ=UTC
 COPY --from=epoxy /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=epoxy /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=epoxy-builder /epoxyd /epoxyd
-USER nobody:nobody
+USER 65534
 CMD [ "/epoxyd" ]
