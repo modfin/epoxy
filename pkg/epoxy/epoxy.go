@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/modfin/epoxy/internal/fallbackfs"
-	"github.com/modfin/epoxy/internal/log"
 	"io/fs"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"path"
 	"strings"
+
+	"github.com/modfin/epoxy/internal/fallbackfs"
+	"github.com/modfin/epoxy/internal/log"
 )
 
 type Epoxy interface {
@@ -31,6 +32,16 @@ func New(publicDir fs.FS, publicPrefix string, routes ...Route) (Epoxy, error) {
 			return nil, fmt.Errorf("could parse target route target: %w", err)
 		}
 		p := httputil.NewSingleHostReverseProxy(target)
+
+		// attempt to fix issue with Host header NOT being set to target host on reverse proxy
+		if r.RewriteHost {
+			p = &httputil.ReverseProxy{
+				Rewrite: func(pr *httputil.ProxyRequest) {
+					pr.SetURL(target)
+				},
+			}
+		}
+
 		prefix := strings.TrimSuffix(r.Prefix, "/")
 		h := http.Handler(p)
 		if r.Strip {
