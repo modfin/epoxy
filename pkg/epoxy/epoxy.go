@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/modfin/epoxy/internal/fallbackfs"
-	"github.com/modfin/epoxy/internal/log"
 	"io/fs"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"path"
 	"strings"
+
+	"github.com/modfin/epoxy/internal/fallbackfs"
+	"github.com/modfin/epoxy/internal/log"
 )
 
 type Epoxy interface {
@@ -31,6 +32,13 @@ func New(publicDir fs.FS, publicPrefix string, routes ...Route) (Epoxy, error) {
 			return nil, fmt.Errorf("could parse target route target: %w", err)
 		}
 		p := httputil.NewSingleHostReverseProxy(target)
+		d := p.Director
+		pre, post := "", ""
+		p.Director = func(r *http.Request) {
+			pre = r.RequestURI
+			d(r)
+			post = r.RequestURI
+		}
 		prefix := strings.TrimSuffix(r.Prefix, "/")
 		h := http.Handler(p)
 		if r.Strip {
@@ -41,6 +49,8 @@ func New(publicDir fs.FS, publicPrefix string, routes ...Route) (Epoxy, error) {
 		}
 		attachToMux(mux, prefix, h)
 		log.New().
+			WithField("pre-uri", pre).
+			WithField("post-uri", post).
 			WithField("prefix", r.Prefix).
 			WithField("target", r.Target).
 			WithField("strip", r.Strip).
