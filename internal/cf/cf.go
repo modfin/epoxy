@@ -62,4 +62,5 @@ type Claims struct {
 	Type          string `json:"type"`
 	IdentityNonce string `json:"identity_nonce"`
 	Country       string `json:"country"`
+	CommonName    string `json:"common_name"`
 }

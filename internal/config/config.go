@@ -27,6 +27,8 @@ type config struct {
 	CfJwksUrl string `env:"CF_JWKS_URL"`
 	CfAppAud  string `env:"CF_APP_AUD"`
 
+	CfServiceTokenAllowlist string `env:"CF_SERVICE_TOKEN_ALLOWLIST"`
+
 	DevAddr                string        `env:"DEV_ADDR" envDefault:":7070"`
 	DevAllowedUserSuffix   string        `env:"DEV_ALLOWED_USER_SUFFIX"`
 	DevBcryptHash          string        `env:"DEV_BCRYPT_HASH"`
@@ -66,24 +68,30 @@ func Get() Config {
 			log.New().Fatal("error: DEV_SESSION_DURATION is negative")
 		}
 
+		var serviceTokenAllowList []string
+		if c.CfServiceTokenAllowlist != "" {
+			serviceTokenAllowList = strings.Split(strings.TrimSpace(c.CfServiceTokenAllowlist), ",")
+		}
+
 		cfg = Config{
-			Routes:                 routes,
-			PublicDir:              strings.TrimSpace(c.PublicDir),
-			PublicPrefix:           strings.TrimSpace(c.PublicPrefix),
-			CfAddr:                 strings.TrimSpace(c.CfAddr),
-			CfJwkUrl:               strings.TrimSpace(c.CfJwksUrl),
-			CfAppAud:               strings.TrimSpace(c.CfAppAud),
-			ExtJwkUrl:              strings.TrimSpace(c.ExtJwksUrl),
-			ExtJwtUrl:              strings.TrimSpace(c.ExtJwtUrl),
-			ExtJwtSubjectPath:      strings.TrimSpace(c.ExtJwtSubjectPath),
-			DevAddr:                strings.TrimSpace(c.DevAddr),
-			DevBcryptHash:          strings.TrimSpace(c.DevBcryptHash),
-			DevAllowedUserSuffix:   strings.TrimSpace(c.DevAllowedUserSuffix),
-			NoAuthEnable:           c.NoAuthEnable,
-			NoAuthAddr:             strings.TrimSpace(c.NoAuthAddr),
-			DevSessionDuration:     c.DevSessionDuration,
-			DevDisableSecureCookie: c.DevDisableSecureCookie,
-			ContentSecurityPolicy:  c.ContentSecurityPolicy,
+			Routes:                  routes,
+			PublicDir:               strings.TrimSpace(c.PublicDir),
+			PublicPrefix:            strings.TrimSpace(c.PublicPrefix),
+			CfAddr:                  strings.TrimSpace(c.CfAddr),
+			CfJwkUrl:                strings.TrimSpace(c.CfJwksUrl),
+			CfAppAud:                strings.TrimSpace(c.CfAppAud),
+			CfServiceTokenAllowlist: serviceTokenAllowList,
+			ExtJwkUrl:               strings.TrimSpace(c.ExtJwksUrl),
+			ExtJwtUrl:               strings.TrimSpace(c.ExtJwtUrl),
+			ExtJwtSubjectPath:       strings.TrimSpace(c.ExtJwtSubjectPath),
+			DevAddr:                 strings.TrimSpace(c.DevAddr),
+			DevBcryptHash:           strings.TrimSpace(c.DevBcryptHash),
+			DevAllowedUserSuffix:    strings.TrimSpace(c.DevAllowedUserSuffix),
+			NoAuthEnable:            c.NoAuthEnable,
+			NoAuthAddr:              strings.TrimSpace(c.NoAuthAddr),
+			DevSessionDuration:      c.DevSessionDuration,
+			DevDisableSecureCookie:  c.DevDisableSecureCookie,
+			ContentSecurityPolicy:   c.ContentSecurityPolicy,
 		}
 
 		if strings.TrimSpace(c.JwtEc256) != "" {
@@ -106,25 +114,26 @@ func Get() Config {
 }
 
 type Config struct {
-	Routes                 []epoxy.Route
-	PublicDir              string
-	PublicPrefix           string
-	CfAddr                 string
-	CfJwkUrl               string
-	CfAppAud               string
-	DevAddr                string
-	DevAllowedUserSuffix   string
-	DevBcryptHash          string
-	DevSessionDuration     time.Duration
-	DevDisableSecureCookie bool
-	ExtJwkUrl              string
-	ExtJwtUrl              string
-	ExtJwtSubjectPath      string
-	NoAuthEnable           bool
-	NoAuthAddr             string
-	JwtEc256               *ecdsa.PrivateKey
-	JwtEc256Pub            *ecdsa.PublicKey
-	ContentSecurityPolicy  string
+	Routes                  []epoxy.Route
+	PublicDir               string
+	PublicPrefix            string
+	CfAddr                  string
+	CfJwkUrl                string
+	CfAppAud                string
+	CfServiceTokenAllowlist []string
+	DevAddr                 string
+	DevAllowedUserSuffix    string
+	DevBcryptHash           string
+	DevSessionDuration      time.Duration
+	DevDisableSecureCookie  bool
+	ExtJwkUrl               string
+	ExtJwtUrl               string
+	ExtJwtSubjectPath       string
+	NoAuthEnable            bool
+	NoAuthAddr              string
+	JwtEc256                *ecdsa.PrivateKey
+	JwtEc256Pub             *ecdsa.PublicKey
+	ContentSecurityPolicy   string
 }
 
 func parseRoutes(routesString string) ([]epoxy.Route, error) {
