@@ -22,6 +22,27 @@ import (
 
 func main() {
 	cfg := config.Get()
+
+	log.New().
+		WithField("CF_ADDR", cfg.CfAddr).
+		WithField("CF_JWKS_URL", cfg.CfJwkUrl).
+		WithField("CF_APP_AUD", cfg.CfAppAud).
+		WithField("CF_SERVICE_TOKEN_ALLOWLIST", cfg.CfServiceTokenAllowlist).
+		WithField("EXT_JWKS_URL", cfg.ExtJwkUrl).
+		WithField("EXT_JWT_URL", cfg.ExtJwtUrl).
+		WithField("EXT_JWT_SUBJECT_PATH", cfg.ExtJwtSubjectPath).
+		WithField("DEV_ADDR", cfg.DevAddr).
+		WithField("DEV_ALLOWED_USER_SUFFIX", cfg.DevAllowedUserSuffix).
+		WithField("DEV_SESSION_DURATION", cfg.DevSessionDuration).
+		WithField("DEV_DISABLE_SECURE_COOKIE", cfg.DevDisableSecureCookie).
+		WithField("NO_AUTH_ENABLE", cfg.NoAuthEnable).
+		WithField("NO_AUTH_ADDR", cfg.NoAuthAddr).
+		WithField("PUBLIC_DIR", cfg.PublicDir).
+		WithField("PUBLIC_PREFIX", cfg.PublicPrefix).
+		WithField("CONTENT_SECURITY_POLICY", cfg.ContentSecurityPolicy).
+		WithField("ROUTES", cfg.Routes).
+		Info("epoxy config")
+
 	var publicFs fs.FS
 	if cfg.PublicDir != "" {
 		publicFs = os.DirFS(cfg.PublicDir)
@@ -38,7 +59,7 @@ func main() {
 			return gzhttp.GzipHandler(h)
 		}
 		middlewares := []epoxy.Middleware{
-			extjwt.Middleware(cfg.ExtJwkUrl, cfg.ExtJwtUrl),
+			extjwt.Middleware(cfg.ExtJwkUrl, cfg.ExtJwtUrl, cfg.CfServiceTokenAllowlist),
 			cf.Middleware(cfg.CfAppAud, cfg.CfJwkUrl),
 			nocache.Middleware,
 			gzipMiddleware,

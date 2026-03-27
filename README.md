@@ -29,6 +29,7 @@ In this mode epoxy can be used as a regular reverse proxy or static file server.
 * `CF_JWKS_URL` Cloudflare JWKS Url to [validate JWT](https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/)\
 e.g. `https://<your-team-name>.cloudflareaccess.com/cdn-cgi/access/certs`
 * `CF_APP_AUD` Cloudflare Application Audience (AUD) Tag.
+* `CF_SERVICE_TOKEN_ALLOWLIST` Comma separated list of Cloudflare Service Tokens to allow.
 
 #### Dev mode server
 * `DEV_ADDR` address to serve at, e.g. `":8080"` or `"127.0.0.1:8080"`

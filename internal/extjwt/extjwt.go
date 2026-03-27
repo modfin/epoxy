@@ -5,20 +5,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/modfin/epoxy/internal/cf"
 	"github.com/modfin/epoxy/internal/log"
 	"github.com/modfin/epoxy/internal/simplecache"
 	"github.com/modfin/epoxy/pkg/epoxy"
 	"github.com/modfin/epoxy/pkg/jwk"
-	"io"
-	"net/http"
-	"time"
 )
 
 type contextKey struct{}
 
-func Middleware(extJwkUrl string, extJwtUrl string) epoxy.Middleware {
+func Middleware(extJwkUrl string, extJwtUrl string, cfServiceTokenAllowlist []string) epoxy.Middleware {
 	if extJwkUrl == "" || extJwtUrl == "" {
 		log.New().Fatal("extjwt: missing required parameters")
 	}
@@ -34,6 +35,14 @@ func Middleware(extJwkUrl string, extJwtUrl string) epoxy.Middleware {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+			// Check if this is a service token by looking for common_name in claims
+			serviceTokenClaims := checkCloudflareServiceToken(r.Context(), cfAuth, cfServiceTokenAllowlist)
+			if serviceTokenClaims != nil {
+				ctx := context.WithValue(r.Context(), contextKey{}, *serviceTokenClaims)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+
 			extJwt, err := getAndParseExtJwt(r.Context(), jwkCache, extJwtCache, extJwkUrl, extJwtUrl, cfAuth.Raw)
 			if err != nil {
 				log.New().WithError(fmt.Errorf("extjwt: error getting and parsing token: %w", err)).AddToContext(r.Context())
@@ -44,6 +53,32 @@ func Middleware(extJwkUrl string, extJwtUrl string) epoxy.Middleware {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func checkCloudflareServiceToken(ctx context.Context, cfAuth *jwt.Token, cfServiceTokenAllowlist []string) *jwt.MapClaims {
+	if claims, hasClaims := cfAuth.Claims.(jwt.MapClaims); hasClaims {
+		if commonName, hasCommonName := claims["common_name"].(string); hasCommonName && commonName != "" {
+			for _, allowedId := range cfServiceTokenAllowlist {
+				if commonName == allowedId {
+					log.New().WithField("service_token", commonName).AddToContext(ctx)
+					// Create synthetic ext claims for service token
+					serviceTokenClaims := jwt.MapClaims{
+						"iss": "epoxy:service-token",
+						"iat": time.Now().Unix(),
+						"exp": time.Now().Add(time.Hour).Unix(),
+						"user": map[string]any{
+							"email":      commonName,
+							"full_name":  commonName,
+							"first_name": "Service Token",
+							"groups":     []string{"service-token"},
+						},
+					}
+					return &serviceTokenClaims
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func ExtValidationClaims(ctx context.Context) (jwt.MapClaims, error) {
