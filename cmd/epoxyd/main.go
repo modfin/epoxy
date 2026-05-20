@@ -38,7 +38,10 @@ func main() {
 			return gzhttp.GzipHandler(h)
 		}
 		middlewares := []epoxy.Middleware{
-			extjwt.Middleware(cfg.ExtJwkUrl, cfg.ExtJwtUrl),
+			extjwt.Middleware(cfg.ExtJwkUrl, cfg.ExtJwtUrl, extjwt.ServiceAccountConfig{
+				Allow:         cfg.CfAllowServiceAccount,
+				EmailTemplate: cfg.CfServiceAccountEmailTemplate,
+			}),
 			cf.Middleware(cfg.CfAppAud, cfg.CfJwkUrl),
 			nocache.Middleware,
 			gzipMiddleware,

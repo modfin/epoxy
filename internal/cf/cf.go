@@ -15,6 +15,11 @@ import (
 
 type contextKey struct{}
 
+type accessToken struct {
+	token  *jwt.Token
+	claims Claims
+}
+
 func Middleware(cfAppAud string, cfJwksUrl string) epoxy.Middleware {
 	if cfAppAud == "" || cfJwksUrl == "" {
 		log.New().Fatal("cf: CF_APP_AUD and CF_JWKS_URL required")
@@ -42,18 +47,28 @@ func Middleware(cfAppAud string, cfJwksUrl string) epoxy.Middleware {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-			log.New().WithField("email", claims.Email).AddToContext(r.Context())
-			ctx := context.WithValue(r.Context(), contextKey{}, token)
+			log.New().
+				WithField("email", claims.Email).
+				WithField("service_account_common_name", claims.CommonName).
+				AddToContext(r.Context())
+			ctx := context.WithValue(r.Context(), contextKey{}, accessToken{token: token, claims: claims})
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
 func AccessToken(ctx context.Context) (*jwt.Token, error) {
-	if t, ok := ctx.Value(contextKey{}).(*jwt.Token); ok {
-		return t, nil
+	if a, ok := ctx.Value(contextKey{}).(accessToken); ok {
+		return a.token, nil
 	}
 	return nil, errors.New("couldn't get parsed 'Cf-Access-Jwt-Assertion' from context, make sure cf.Middleware has run")
+}
+
+func AccessClaims(ctx context.Context) (Claims, error) {
+	if a, ok := ctx.Value(contextKey{}).(accessToken); ok {
+		return a.claims, nil
+	}
+	return Claims{}, errors.New("couldn't get parsed Cloudflare Access claims from context, make sure cf.Middleware has run")
 }
 
 type Claims struct {
@@ -62,4 +77,5 @@ type Claims struct {
 	Type          string `json:"type"`
 	IdentityNonce string `json:"identity_nonce"`
 	Country       string `json:"country"`
+	CommonName    string `json:"common_name"`
 }

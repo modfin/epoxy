@@ -27,6 +27,9 @@ type config struct {
 	CfJwksUrl string `env:"CF_JWKS_URL"`
 	CfAppAud  string `env:"CF_APP_AUD"`
 
+	CfAllowServiceAccount         bool   `env:"CF_ALLOW_SERVICE_ACCOUNT"`
+	CfServiceAccountEmailTemplate string `env:"CF_SERVICE_ACCOUNT_EMAIL_TEMPLATE"`
+
 	DevAddr                string        `env:"DEV_ADDR" envDefault:":7070"`
 	DevAllowedUserSuffix   string        `env:"DEV_ALLOWED_USER_SUFFIX"`
 	DevBcryptHash          string        `env:"DEV_BCRYPT_HASH"`
@@ -67,12 +70,16 @@ func Get() Config {
 		}
 
 		cfg = Config{
-			Routes:                 routes,
-			PublicDir:              strings.TrimSpace(c.PublicDir),
-			PublicPrefix:           strings.TrimSpace(c.PublicPrefix),
-			CfAddr:                 strings.TrimSpace(c.CfAddr),
-			CfJwkUrl:               strings.TrimSpace(c.CfJwksUrl),
-			CfAppAud:               strings.TrimSpace(c.CfAppAud),
+			Routes:                routes,
+			PublicDir:             strings.TrimSpace(c.PublicDir),
+			PublicPrefix:          strings.TrimSpace(c.PublicPrefix),
+			CfAddr:                strings.TrimSpace(c.CfAddr),
+			CfJwkUrl:              strings.TrimSpace(c.CfJwksUrl),
+			CfAppAud:              strings.TrimSpace(c.CfAppAud),
+			CfAllowServiceAccount: c.CfAllowServiceAccount,
+			CfServiceAccountEmailTemplate: strings.TrimSpace(
+				c.CfServiceAccountEmailTemplate,
+			),
 			ExtJwkUrl:              strings.TrimSpace(c.ExtJwksUrl),
 			ExtJwtUrl:              strings.TrimSpace(c.ExtJwtUrl),
 			ExtJwtSubjectPath:      strings.TrimSpace(c.ExtJwtSubjectPath),
@@ -106,25 +113,27 @@ func Get() Config {
 }
 
 type Config struct {
-	Routes                 []epoxy.Route
-	PublicDir              string
-	PublicPrefix           string
-	CfAddr                 string
-	CfJwkUrl               string
-	CfAppAud               string
-	DevAddr                string
-	DevAllowedUserSuffix   string
-	DevBcryptHash          string
-	DevSessionDuration     time.Duration
-	DevDisableSecureCookie bool
-	ExtJwkUrl              string
-	ExtJwtUrl              string
-	ExtJwtSubjectPath      string
-	NoAuthEnable           bool
-	NoAuthAddr             string
-	JwtEc256               *ecdsa.PrivateKey
-	JwtEc256Pub            *ecdsa.PublicKey
-	ContentSecurityPolicy  string
+	Routes                        []epoxy.Route
+	PublicDir                     string
+	PublicPrefix                  string
+	CfAddr                        string
+	CfJwkUrl                      string
+	CfAppAud                      string
+	CfAllowServiceAccount         bool
+	CfServiceAccountEmailTemplate string
+	DevAddr                       string
+	DevAllowedUserSuffix          string
+	DevBcryptHash                 string
+	DevSessionDuration            time.Duration
+	DevDisableSecureCookie        bool
+	ExtJwkUrl                     string
+	ExtJwtUrl                     string
+	ExtJwtSubjectPath             string
+	NoAuthEnable                  bool
+	NoAuthAddr                    string
+	JwtEc256                      *ecdsa.PrivateKey
+	JwtEc256Pub                   *ecdsa.PublicKey
+	ContentSecurityPolicy         string
 }
 
 func parseRoutes(routesString string) ([]epoxy.Route, error) {
