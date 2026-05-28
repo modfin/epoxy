@@ -5,18 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/modfin/epoxy/internal/cf"
-	"github.com/modfin/epoxy/internal/log"
-	"github.com/modfin/epoxy/internal/simplecache"
-	"github.com/modfin/epoxy/pkg/epoxy"
-	"github.com/modfin/epoxy/pkg/jwk"
 	"io"
 	"net/http"
 	"net/mail"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/modfin/epoxy/internal/cf"
+	"github.com/modfin/epoxy/internal/log"
+	"github.com/modfin/epoxy/internal/simplecache"
+	"github.com/modfin/epoxy/pkg/epoxy"
+	"github.com/modfin/epoxy/pkg/jwk"
 )
 
 type contextKey struct{}
@@ -49,7 +50,7 @@ func Middleware(extJwkUrl string, extJwtUrl string, serviceAccount ServiceAccoun
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			if serviceAccountTemplate != nil && isServiceAccount(cfClaims) {
+			if serviceAccount.Allow && serviceAccountTemplate != nil && isServiceAccount(cfClaims) {
 				claims, err := serviceAccountClaims(cfClaims, serviceAccountTemplate)
 				if err != nil {
 					log.New().WithError(fmt.Errorf("extjwt: error rendering service account claims: %w", err)).AddToContext(r.Context())
