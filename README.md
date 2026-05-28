@@ -29,6 +29,9 @@ In this mode epoxy can be used as a regular reverse proxy or static file server.
 * `CF_JWKS_URL` Cloudflare JWKS Url to [validate JWT](https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/)\
 e.g. `https://<your-team-name>.cloudflareaccess.com/cdn-cgi/access/certs`
 * `CF_APP_AUD` Cloudflare Application Audience (AUD) Tag.
+* `CF_ALLOW_SERVICE_ACCOUNT` enables Cloudflare Access service token support.
+* `CF_SERVICE_ACCOUNT_EMAIL_TEMPLATE` Go template for deriving an email address from service token claims, e.g. `service-account-{{.CommonName}}@example.com.se`.
+  `CommonName` is the Cloudflare service token client id from the `common_name` claim.
 
 #### Dev mode server
 * `DEV_ADDR` address to serve at, e.g. `":8080"` or `"127.0.0.1:8080"`
@@ -47,4 +50,4 @@ After validating `Cf-Access-Jwt-Assertion` header, contact external/custom servi
 #### JWT Keys
 After fetching external JWT or always in *dev mode*, a new JWT token is generated and sent in the `Epoxy-Token` header.
 * `JWT_EC_256` used for generating JWT and *dev mode* cookie
-* `JWT_EC_256_PUB` used for verifying *dev mode* cookie. 
+* `JWT_EC_256_PUB` used for verifying *dev mode* cookie.

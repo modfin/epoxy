@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"net/http"
 	"os"
@@ -21,6 +22,10 @@ import (
 )
 
 func main() {
+	defer func() {
+		log.Drain(context.Background())
+	}()
+
 	cfg := config.Get()
 	var publicFs fs.FS
 	if cfg.PublicDir != "" {
@@ -38,7 +43,10 @@ func main() {
 			return gzhttp.GzipHandler(h)
 		}
 		middlewares := []epoxy.Middleware{
-			extjwt.Middleware(cfg.ExtJwkUrl, cfg.ExtJwtUrl),
+			extjwt.Middleware(cfg.ExtJwkUrl, cfg.ExtJwtUrl, extjwt.ServiceAccountConfig{
+				Allow:         cfg.CfAllowServiceAccount,
+				EmailTemplate: cfg.CfServiceAccountEmailTemplate,
+			}),
 			cf.Middleware(cfg.CfAppAud, cfg.CfJwkUrl),
 			nocache.Middleware,
 			gzipMiddleware,
@@ -77,8 +85,12 @@ func main() {
 		epoxies = append(epoxies, e.WithMiddlewares(middlewares).Finalize("no-auth", cfg.NoAuthAddr))
 	}
 
+	if len(epoxies) == 0 {
+		log.New().WithError(errors.New("no auth method was set, CF_APP_AUD | DEV_BCRYPT_HASH | NO_AUTH_ENABLE, must be configured")).Error("Shutting down service")
+		return
+	}
+
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGTERM)
 	err = epoxy.Serve(ctx, epoxies...)
 	log.New().WithError(err).Info("shutting down")
-	log.Drain(context.Background())
 }

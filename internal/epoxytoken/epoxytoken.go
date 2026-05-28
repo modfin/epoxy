@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/modfin/epoxy/internal/dev"
 	"github.com/modfin/epoxy/internal/extjwt"
 	"github.com/modfin/epoxy/internal/log"
 	"github.com/modfin/epoxy/pkg/epoxy"
-	"net/http"
-	"strings"
-	"time"
 )
 
 type EpoxyClaims struct {
@@ -33,6 +34,11 @@ func MiddlewareExt(epoxyJwtKey *ecdsa.PrivateKey, subjectPath string) epoxy.Midd
 				return
 			}
 			subject, err := getPath(extClaims, subjectPath)
+			//If its not a regular user account, check if it is a Service Accounnt from cloudflare
+			if sa, ok := extClaims["service_account"].(bool); err != nil && sa && ok {
+				subject, err = getPath(extClaims, "email")
+			}
+
 			if err != nil {
 				log.New().WithError(fmt.Errorf("epoxytoken: subject not found: %w", err)).AddToContext(r.Context())
 				w.WriteHeader(http.StatusUnauthorized)
